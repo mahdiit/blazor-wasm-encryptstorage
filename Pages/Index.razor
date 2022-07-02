@@ -1,0 +1,82 @@
+﻿@page "/"
+@using MainUi.Shared
+@using MainUi.Shared.EncryptProviders
+@using Blazored.SessionStorage
+@using Blazored.LocalStorage
+@inject IJSRuntime Js
+<div class="container">
+    <div class="row">
+        <div>
+            <div>
+                <div class="form-group text-center">
+                    <button class="btn btn-danger" @onclick="@DoClear">Clear TextBox</button>                    
+                </div>
+                <div class="form-group">
+                    <label>Original text:</label>
+                    <input type="text" class="form-control" @bind-value="@OriginalText" />
+                </div>
+                <div class="form-group text-center">
+                    <button class="btn btn-primary" @onclick="@DoEncrypt">Encrypt</button>&nbsp;
+                    <button class="btn btn-success" @onclick="@DoDecrypt">Decrypt</button>
+                </div>
+                <div class="form-group">
+                    <label>Encrypted Text:</label>
+                    <input type="text" class="form-control" @bind-value="@EncryptedText" />
+                </div>
+                <div class="form-group text-center">
+                    <button class="btn btn-primary" @onclick="@DoStore">Store in Session and Loacal</button>&nbsp;
+                    <button class="btn btn-success" @onclick="@ReadStore">Read from store</button>
+                </div>
+            </div>
+            <div class="alert alert-info">
+                press  F12 nad see local storage and session storage
+            </div>
+            <div>
+                <img src="/test.jpg" />
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code{
+    [Inject] IEncryptProvider EncryptProvider { get; set; }
+    [Inject] ISessionStorageService SessionStorage { get; set; }
+    [Inject] ILocalStorageService LocalStorage { get; set; }
+
+    public string OriginalText { get; set; }
+    public string EncryptedText { get; set; }
+
+    async Task DoClear()
+    {
+        EncryptedText = "";
+        OriginalText = "";
+        await Js.InvokeVoidAsync("alert", "Cleared");
+    }
+
+    async Task DoEncrypt()
+    {
+        EncryptedText = await EncryptProvider.Encrypt(OriginalText);
+        await Js.InvokeVoidAsync("alert", "Encrypt Complete");
+    }
+
+    async Task DoDecrypt()
+    {
+        OriginalText = await EncryptProvider.Decrypt<string>(EncryptedText);
+        await Js.InvokeVoidAsync("alert", "Decrypt Complete");
+    }
+
+    async Task DoStore()
+    {
+        await SessionStorage.SetItemAsync<string>("SampleKey", EncryptedText);
+        await LocalStorage.SetItemAsync<string>("SampleKey", EncryptedText);
+
+        await Js.InvokeVoidAsync("alert", "Information added to store");
+    }
+
+    async Task ReadStore()
+    {
+        EncryptedText = await SessionStorage.GetItemAsync<string>("SampleKey");
+        await Js.InvokeVoidAsync("alert", "Store Read Complete");
+    }
+}
